@@ -1,8 +1,11 @@
 #include <Arduino.h>
 #include <LiquidCrystal_I2C.h>
 #include <SerialCommand.h>
+#include <U8g2lib.h>
+#include <SPI.h>
 #include <Wire.h>
 
+U8G2_ST7920_128X64_F_HW_SPI display(U8G2_R0, 12);
 LiquidCrystal_I2C lcd(0x27, 20, 4);  // set the LCD address to 0x27 for a 16 chars and 2 line display
 SerialCommand sCmd;
 
@@ -66,6 +69,9 @@ void setup() {
   lcd.init();
   lcd.backlight();
   lcd.setCursor(0, 0);
+
+  display.begin();
+
   Serial.begin(9600);
 
   sCmd.addCommand("ct", cpuTemp);
