@@ -5,39 +5,76 @@
 #include <U8g2lib.h>
 #include <Wire.h>
 
+#include "config.h"
+
 U8G2_ST7920_128X64_F_HW_SPI display(U8G2_R2, 12);
 SerialCommand sCmd;
 
-const char *cpuTemp;
-const char *cpuUsage;
-const char *gpuTemp;
-const char *gpuUsage;
+int cpuTemp = -1;
+int cpuUsage = -1;
+int gpuTemp = -1;
+int gpuUsage = -1;
+int memUsage = -1;
+
+int coreUsage[CORE_COUNT] = {100, 50, 25, 0};
+
+void drawProgressBar(int x, int y, int w, int h, int filled) {
+  filled = 100 - filled;
+
+  display.drawFrame(x, y, w, h);
+
+  int fillOffset = (h * (filled / 100.0F));
+  int fillHeight = h - fillOffset;
+
+  display.drawBox(x + 1, y + fillOffset, w - 2, fillHeight);
+}
 
 void loop() {
   sCmd.readSerial();
 }
 
-void writeToDisplay() {
+void drawCores() {
+  for (int i = 0; i < CORE_COUNT; i++) {
+    drawProgressBar((128 - (10 * CORE_COUNT)) + (i * 10), 40, 8, 24, coreUsage[i]);
+  }
+}
+
+// Draw everything
+void draw() {
+  display.clearBuffer();
   display.setCursor(0, 11);
 
   display.print("CPU: ");
   display.print(cpuUsage);
   display.print("% @ ");
   display.print(cpuTemp);
+  display.print("°");  // Extra spaces to overwrite old characters that might still be there
+
+  display.setCursor(0, 24);
+
+  display.print("GPU: ");
+  display.print(gpuTemp);
   display.print("°");
 
-  
-  
-  
-  display.sendBuffer();
+  display.setCursor(0, 37);
+
+  display.print("RAM: ");
+  display.print(memUsage);
+  display.print("MB of ");
+  display.print(MEMORY_MAX);
+  display.print("MB");
+
+  drawCores();
+
+  display.updateDisplay();
 }
 
 void cpuTempCmd() {
   char *arg = sCmd.next();
   if (arg != NULL) {
     Serial.println(arg);
-    cpuTemp = arg;
-    writeToDisplay();
+    cpuTemp = atoi(arg);
+    draw();
   } else {
     Serial.println("Error");
   }
@@ -47,8 +84,8 @@ void gpuTempCmd() {
   char *arg = sCmd.next();
   if (arg != NULL) {
     Serial.println(arg);
-    display.drawStr(0, 11, arg);
-    display.sendBuffer();
+    gpuTemp = atoi(arg);
+    draw();
   } else {
     Serial.println("Error");
   }
@@ -58,7 +95,8 @@ void cpuUsageCmd() {
   char *arg = sCmd.next();
   if (arg != NULL) {
     Serial.println(arg);
-    cpuUsage = arg;
+    cpuUsage = atoi(arg);
+    draw();
   } else {
     Serial.println("Error");
   }
@@ -68,11 +106,23 @@ void gpuUsageCmd() {
   char *arg = sCmd.next();
   if (arg != NULL) {
     Serial.println(arg);
-    display.drawStr(0, 11, arg);
-    display.sendBuffer();
+    gpuUsage = atoi(arg);
+    draw();
   } else {
     Serial.println("Error");
   }
+}
+
+void cpuCoreCmd() {
+  for (int i = 0; i < CORE_COUNT; i++) {
+    coreUsage[i] = constrain(atoi(sCmd.next()), 0, 100);
+  }
+  draw();
+}
+
+void memoryUsageCmd() {
+  memUsage = atoi(sCmd.next());
+  draw();
 }
 
 void unrecognized(const char *command) {
@@ -91,5 +141,7 @@ void setup() {
   sCmd.addCommand("gt", gpuTempCmd);
   sCmd.addCommand("cu", cpuUsageCmd);
   sCmd.addCommand("gu", gpuUsageCmd);
-  sCmd.setDefaultHandler(unrecognized);  // Handler for command that isn't matched  (says "What?")
+  sCmd.addCommand("cc", cpuCoreCmd);
+  sCmd.addCommand("mu", memoryUsageCmd);
+  sCmd.setDefaultHandler(unrecognized);
 }
