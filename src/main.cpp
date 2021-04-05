@@ -35,14 +35,14 @@ void loop() {
 
 void drawCores() {
   for (int i = 0; i < CORE_COUNT; i++) {
-    drawProgressBar((128 - (10 * CORE_COUNT)) + (i * 10), 40, 8, 24, coreUsage[i]);
+    drawProgressBar((128 - (10 * CORE_COUNT)) + (i * 10), 28, 8, 36, coreUsage[i]);
   }
 }
 
 // Draw everything
 void draw() {
   display.clearBuffer();
-  display.setCursor(0, 11);
+  display.setCursor(0, 8);
 
   display.print("CPU: ");
   display.print(cpuUsage);
@@ -50,13 +50,13 @@ void draw() {
   display.print(cpuTemp);
   display.print("°");  // Extra spaces to overwrite old characters that might still be there
 
-  display.setCursor(0, 24);
+  display.setCursor(0, 16);
 
   display.print("GPU: ");
   display.print(gpuTemp);
   display.print("°");
 
-  display.setCursor(0, 37);
+  display.setCursor(0, 24);
 
   display.print("RAM: ");
   display.print(memUsage);
@@ -66,7 +66,7 @@ void draw() {
 
   drawCores();
 
-  display.updateDisplay();
+  display.sendBuffer();
 }
 
 void cpuTempCmd() {
@@ -74,7 +74,6 @@ void cpuTempCmd() {
   if (arg != NULL) {
     Serial.println(arg);
     cpuTemp = atoi(arg);
-    draw();
   } else {
     Serial.println("Error");
   }
@@ -85,7 +84,6 @@ void gpuTempCmd() {
   if (arg != NULL) {
     Serial.println(arg);
     gpuTemp = atoi(arg);
-    draw();
   } else {
     Serial.println("Error");
   }
@@ -96,7 +94,6 @@ void cpuUsageCmd() {
   if (arg != NULL) {
     Serial.println(arg);
     cpuUsage = atoi(arg);
-    draw();
   } else {
     Serial.println("Error");
   }
@@ -107,7 +104,6 @@ void gpuUsageCmd() {
   if (arg != NULL) {
     Serial.println(arg);
     gpuUsage = atoi(arg);
-    draw();
   } else {
     Serial.println("Error");
   }
@@ -115,14 +111,12 @@ void gpuUsageCmd() {
 
 void cpuCoreCmd() {
   for (int i = 0; i < CORE_COUNT; i++) {
-    coreUsage[i] = constrain(atoi(sCmd.next()), 0, 100);
+    coreUsage[i] = atoi(sCmd.next());
   }
-  draw();
 }
 
 void memoryUsageCmd() {
   memUsage = atoi(sCmd.next());
-  draw();
 }
 
 void unrecognized(const char *command) {
@@ -132,7 +126,7 @@ void unrecognized(const char *command) {
 void setup() {
   display.begin();
   display.clear();
-  display.setFont(u8g2_font_t0_11_mf);
+  display.setFont(u8g2_font_5x7_tf);
   display.enableUTF8Print();
 
   Serial.begin(9600);
@@ -143,5 +137,6 @@ void setup() {
   sCmd.addCommand("gu", gpuUsageCmd);
   sCmd.addCommand("cc", cpuCoreCmd);
   sCmd.addCommand("mu", memoryUsageCmd);
+  sCmd.addCommand("draw", draw);
   sCmd.setDefaultHandler(unrecognized);
 }
