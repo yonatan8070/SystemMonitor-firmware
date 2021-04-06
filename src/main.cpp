@@ -99,16 +99,6 @@ void cpuUsageCmd() {
   }
 }
 
-void gpuUsageCmd() {
-  char *arg = sCmd.next();
-  if (arg != NULL) {
-    Serial.println(arg);
-    gpuUsage = atoi(arg);
-  } else {
-    Serial.println("Error");
-  }
-}
-
 void cpuCoreCmd() {
   for (int i = 0; i < CORE_COUNT; i++) {
     coreUsage[i] = atoi(sCmd.next());
@@ -134,7 +124,6 @@ void setup() {
   sCmd.addCommand("ct", cpuTempCmd);
   sCmd.addCommand("gt", gpuTempCmd);
   sCmd.addCommand("cu", cpuUsageCmd);
-  sCmd.addCommand("gu", gpuUsageCmd);
   sCmd.addCommand("cc", cpuCoreCmd);
   sCmd.addCommand("mu", memoryUsageCmd);
   sCmd.addCommand("draw", draw);
